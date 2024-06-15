@@ -12,12 +12,13 @@
 <!--dodana formatka registrationForm-->
 <div class="user-form" id="registration-page">
     <h2>Registration</h2>
-    <form id="registrationForm">
+    <form id="registrationForm" method="post" action="/app/registerUser">
+        <input type="hidden">
         <label for="registration-nickname">Nickname:</label>
-        <input type="text" id="registration-nickname" name="nickname" placeholder="Enter your nickname" required>
+        <input type="text" id="registration-nickname" name="nickName" placeholder="Enter your nickname" required>
 
         <label for="registration-password">Password:</label>
-        <input type="password" id="registration-password" name="password" placeholder="Enter your pasword" required>
+        <input type="password" id="registration-password" name="password" placeholder="Enter your password" required>
 
         <button type="submit">Register</button>
     </form>

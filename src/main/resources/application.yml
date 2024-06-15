@@ -7,5 +7,14 @@ spring:
       port: 27017
       database: chat_app
       authentication-database: admin
+
 server:
   port: 8088
+
+logging:
+  level:
+    root: INFO  # Ustawienie poziomu globalnego logowania
+    org.springframework.web: DEBUG  # Logowanie szczegółów dla komponentów Spring Web
+    com.alibou.websocket.user.UserController: DEBUG  # Logowanie szczegółów dla kontrolera UserController
+    com.alibou.websocket.user.UserService: DEBUG  # Logowanie szczegółów dla serwisu UserService
+    org.springframework.web.client.RestTemplate: DEBUG  # Logowanie szczegółów dla klienta RestTemplate

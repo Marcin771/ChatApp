@@ -12,7 +12,7 @@ const logout = document.querySelector('#logout');
 
 let stompClient = null;
 let nickname = null;
-let fullname = null;
+// let fullname = null;
 let password = null;
 let selectedUserId = null;
 
@@ -32,33 +32,102 @@ function connect(event) {
     event.preventDefault();
 }
 
-function register(event){
-    nickname = document.querySelector('#registration-nickname').value.trim();
-    password = document.querySelector('#registration-password').value.trim();
+//function register(event){
+//    nickname = document.querySelector('#registration-nickname').value.trim();
+//    password = document.querySelector('#registration-password').value.trim();
+//
+//    if(nickname && password){
+//    fetch('/app/registerUser',{
+//        method: 'POST',
+//        headers: {
+////            "Connect-Type": 'application/json'
+////        },
+////        body: JSON.stringyfy({nickName: nickname, password: password})
+//            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'  // Zmieniony typ zawartości
+//            },
+//            body: `nickname=${encodeURIComponent(nickname)}&password=${encodeURIComponent(password)}`  // Kodowanie parametrów jako formularz URL-encoded
+//        })
+//        .then(response => {
+//            if(response.ok) {
+//                registrationPage.classList.add('hidden');
+//                loginPage.classList.remove('hidden');
+//            }else {
+//                alert('Registration failed. Please try again.');
+//            }
+//        })
+//        .catch(error => {
+//        console.error('Error during registration:', error);
+//        alert('An error occured during registration.');
+//        });
+//    }
+//    event.preventDefault();
+//}
 
-    if(nickname && password){
-    fetch('/registrerUser',{
-        method: 'POST',
-        headers: {
-            "Connect-Type": 'application/json'
-        },
-        body: JSON.stringyfy({nickname: nickname, password: password})
-        })
-        .then(response => {
-            if(response.ok) {
-                registrationPage.classList.add('hidden');
-                loginPage.classList.remove('hidden');
-            }else {
-                alert('Registration failed. Please try again.');
-            }
-        })
-        .catch(error => {
-        console.error('Error during registration:', error);
-        alert('An error occured during registration.');
-        });
-    }
+ function register() {
+            document.getElementById('registrationForm').addEventListener('submit', function(event) {
+                event.preventDefault(); // Zapobiegamy domyślnej akcji wysłania formularza
+
+                nickname = document.getElementById('registration-nickname').value.trim();
+                password = document.getElementById('registration-password').value.trim();
+
+                const formData = {
+                    nickName: nickname,
+                    password: password
+                };
+
+                fetch('/app/registerUser', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Registration failed.'); // Rzuca błąd w przypadku niepowodzenia żądania
+                    }
+                    return response.json(); // Parsuje odpowiedź jako JSON
+                })
+                .then(data => {
+                    alert('Registration successful.'); // Wyświetla alert o udanej rejestracji
+                    console.log('Registration response:', data); // Loguje odpowiedź z serwera w konsoli
+                    // Możesz dodać dalszą logikę tutaj, np. przekierowanie do innej strony
+                })
+                .catch(error => {
+                    alert(`Registration failed: ${error.message}`); // Wyświetla alert o niepowodzeniu z komunikatem błędu
+                    console.error('Registration error:', error); // Loguje szczegóły błędu w konsoli
+                });
+            });
+
+
+
+  /*  if (nickname && password) {
+       fetch('/app/registerUser', {
+           method: 'POST',
+           headers: {
+               'Content-Type': 'application/json',
+           },
+           body: JSON.stringify({
+               nickname: 'example',
+               password: 'examplePassword',
+               // inne dane do zarejestrowania
+           }),
+       })
+       .then(response => response.json())
+       .then(data => {
+           // obsługa odpowiedzi z serwera
+           console.log(data);
+       })
+       .catch(error => {
+           console.error('Error:', error);
+       });
+
+    }*/
+
     event.preventDefault();
 }
+
+
 
 function onConnected() {
     stompClient.subscribe(`/user/${nickname}/queue/messages`, onMessageReceived);
@@ -67,9 +136,9 @@ function onConnected() {
     // register the connected user
     stompClient.send("/app/user.addUser",
         {},
-        JSON.stringify({nickName: nickname, fullName: fullname, status: 'ONLINE'})
+        JSON.stringify({ nickName: nickname, password: password, status: 'ONLINE' })
     );
-    document.querySelector('#connected-user-fullname').textContent = fullname;
+    document.querySelector('#connected-user-fullname').textContent = password;
     findAndDisplayConnectedUsers().then();
 }
 
@@ -97,10 +166,10 @@ function appendUserElement(user, connectedUsersList) {
 
     const userImage = document.createElement('img');
     userImage.src = '../img/user_icon.png';
-    userImage.alt = user.fullName;
+    userImage.alt = user.password;
 
     const usernameSpan = document.createElement('span');
-    usernameSpan.textContent = user.fullName;
+    usernameSpan.textContent = user.password;
 
     const receivedMsgs = document.createElement('span');
     receivedMsgs.textContent = '0';
@@ -208,11 +277,11 @@ async function onMessageReceived(payload) {
 function onLogout() {
     stompClient.send("/app/user.disconnectUser",
         {},
-        JSON.stringify({nickName: nickname, fullName: fullname, status: 'OFFLINE'})
+        JSON.stringify({ nickName: nickname, password: password, status: 'OFFLINE' })
     );
     window.location.reload();
 }
-registrationForm.addEventListener('submit',registet,true);
+registrationForm.addEventListener('submit', register, true);
 loginForm.addEventListener('submit', connect, true); // step 1
 messageForm.addEventListener('submit', sendMessage, true);
 window.onbeforeunload = () => onLogout();
@@ -223,7 +292,7 @@ logout.addEventListener('click', () => {
     if (stompClient) {
         stompClient.send("/app/user.disconnectUser",
             {},
-            JSON.stringify({ nickName: nickname, fullName: fullname, status: 'OFFLINE' })
+            JSON.stringify({ nickName: nickname, password: password, status: 'OFFLINE' })
         );
         stompClient.disconnect();
     }
