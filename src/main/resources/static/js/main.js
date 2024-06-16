@@ -1,4 +1,5 @@
 'use strict';
+
 const registrationPage = document.querySelector('#registration-page');
 const loginPage = document.querySelector('#login-page');
 const chatPage = document.querySelector('#chat-page');
@@ -12,122 +13,88 @@ const logout = document.querySelector('#logout');
 
 let stompClient = null;
 let nickname = null;
-// let fullname = null;
 let password = null;
 let selectedUserId = null;
 
-function connect(event) {
-    nickname = document.querySelector('#login-nickname').value.trim();
-    password = document.querySelector('#login-password').value.trim();
+function showRegistrationPage() {
+    loginPage.classList.add('hidden');
+    registrationPage.classList.remove('hidden');
+}
+
+function showLoginPage() {
+    registrationPage.classList.add('hidden');
+    loginPage.classList.remove('hidden');
+}
+
+function register(event) {
+    nickname = document.querySelector('#registration-nickname').value.trim();
+    password = document.querySelector('#registration-password').value.trim();
 
     if (nickname && password) {
-        loginPage.classList.add('hidden');
-        chatPage.classList.remove('hidden');
+        const formData = {
+            nickName: nickname,
+            password: password
+        };
 
-        const socket = new SockJS('/ws');
-        stompClient = Stomp.over(socket);
-
-        stompClient.connect({}, onConnected, onError);
+        fetch('/app/registerUser', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Registration failed. User might already exist.');
+            }
+            return response.text();
+        })
+        .then(data => {
+            alert('Registration successful.');
+            showLoginPage();
+        })
+        .catch(error => {
+            alert(`Registration failed: ${error.message}`);
+            console.error('Registration error:', error);
+        });
     }
     event.preventDefault();
 }
 
-//function register(event){
-//    nickname = document.querySelector('#registration-nickname').value.trim();
-//    password = document.querySelector('#registration-password').value.trim();
-//
-//    if(nickname && password){
-//    fetch('/app/registerUser',{
-//        method: 'POST',
-//        headers: {
-////            "Connect-Type": 'application/json'
-////        },
-////        body: JSON.stringyfy({nickName: nickname, password: password})
-//            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'  // Zmieniony typ zawartości
-//            },
-//            body: `nickname=${encodeURIComponent(nickname)}&password=${encodeURIComponent(password)}`  // Kodowanie parametrów jako formularz URL-encoded
-//        })
-//        .then(response => {
-//            if(response.ok) {
-//                registrationPage.classList.add('hidden');
-//                loginPage.classList.remove('hidden');
-//            }else {
-//                alert('Registration failed. Please try again.');
-//            }
-//        })
-//        .catch(error => {
-//        console.error('Error during registration:', error);
-//        alert('An error occured during registration.');
-//        });
-//    }
-//    event.preventDefault();
-//}
 
- function register() {
-            document.getElementById('registrationForm').addEventListener('submit', function(event) {
-                event.preventDefault(); // Zapobiegamy domyślnej akcji wysłania formularza
-
-                nickname = document.getElementById('registration-nickname').value.trim();
-                password = document.getElementById('registration-password').value.trim();
-
-                const formData = {
-                    nickName: nickname,
-                    password: password
-                };
-
-                fetch('/app/registerUser', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(formData)
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Registration failed.'); // Rzuca błąd w przypadku niepowodzenia żądania
-                    }
-                    return response.json(); // Parsuje odpowiedź jako JSON
-                })
-                .then(data => {
-                    alert('Registration successful.'); // Wyświetla alert o udanej rejestracji
-                    console.log('Registration response:', data); // Loguje odpowiedź z serwera w konsoli
-                    // Możesz dodać dalszą logikę tutaj, np. przekierowanie do innej strony
-                })
-                .catch(error => {
-                    alert(`Registration failed: ${error.message}`); // Wyświetla alert o niepowodzeniu z komunikatem błędu
-                    console.error('Registration error:', error); // Loguje szczegóły błędu w konsoli
-                });
-            });
-
-
-
-  /*  if (nickname && password) {
-       fetch('/app/registerUser', {
-           method: 'POST',
-           headers: {
-               'Content-Type': 'application/json',
-           },
-           body: JSON.stringify({
-               nickname: 'example',
-               password: 'examplePassword',
-               // inne dane do zarejestrowania
-           }),
-       })
-       .then(response => response.json())
-       .then(data => {
-           // obsługa odpowiedzi z serwera
-           console.log(data);
-       })
-       .catch(error => {
-           console.error('Error:', error);
-       });
-
-    }*/
-
+function connect(event) {
     event.preventDefault();
+    nickname = document.querySelector('#login-nickname').value.trim();
+    password = document.querySelector('#login-password').value.trim();
+
+    if (nickname && password) {
+        fetch(`/app/loginUser`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ nickName: nickname, password: password })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Login failed.');
+            }
+            return response.json();
+        })
+        .then(data => {
+            loginPage.classList.add('hidden');
+            chatPage.classList.remove('hidden');
+
+            const socket = new SockJS('/ws');
+            stompClient = Stomp.over(socket);
+            stompClient.connect({}, onConnected, onError);
+        })
+        .catch(error => {
+            alert(`Login failed: ${error.message}`);
+            console.error('Login error:', error);
+        });
+    }
 }
-
-
 
 function onConnected() {
     stompClient.subscribe(`/user/${nickname}/queue/messages`, onMessageReceived);
@@ -138,7 +105,7 @@ function onConnected() {
         {},
         JSON.stringify({ nickName: nickname, password: password, status: 'ONLINE' })
     );
-    document.querySelector('#connected-user-fullname').textContent = password;
+    document.querySelector('#connected-user-fullname').textContent = nickname;
     findAndDisplayConnectedUsers().then();
 }
 
@@ -166,10 +133,10 @@ function appendUserElement(user, connectedUsersList) {
 
     const userImage = document.createElement('img');
     userImage.src = '../img/user_icon.png';
-    userImage.alt = user.password;
+    userImage.alt = user.nickName;
 
     const usernameSpan = document.createElement('span');
-    usernameSpan.textContent = user.password;
+    usernameSpan.textContent = user.nickName;
 
     const receivedMsgs = document.createElement('span');
     receivedMsgs.textContent = '0';
@@ -199,7 +166,6 @@ function userItemClick(event) {
     const nbrMsg = clickedUser.querySelector('.nbr-msg');
     nbrMsg.classList.add('hidden');
     nbrMsg.textContent = '0';
-
 }
 
 function displayMessage(senderId, content) {
@@ -226,30 +192,27 @@ async function fetchAndDisplayUserChat() {
     chatArea.scrollTop = chatArea.scrollHeight;
 }
 
-
 function onError() {
     connectingElement.textContent = 'Could not connect to WebSocket server. Please refresh this page to try again!';
     connectingElement.style.color = 'red';
 }
 
-
 function sendMessage(event) {
+    event.preventDefault();
     const messageContent = messageInput.value.trim();
     if (messageContent && stompClient) {
         const chatMessage = {
             senderId: nickname,
             recipientId: selectedUserId,
-            content: messageInput.value.trim(),
+            content: messageContent,
             timestamp: new Date()
         };
         stompClient.send("/app/chat", {}, JSON.stringify(chatMessage));
-        displayMessage(nickname, messageInput.value.trim());
+        displayMessage(nickname, messageContent);
         messageInput.value = '';
     }
     chatArea.scrollTop = chatArea.scrollHeight;
-    event.preventDefault();
 }
-
 
 async function onMessageReceived(payload) {
     await findAndDisplayConnectedUsers();
@@ -270,25 +233,11 @@ async function onMessageReceived(payload) {
     if (notifiedUser && !notifiedUser.classList.contains('active')) {
         const nbrMsg = notifiedUser.querySelector('.nbr-msg');
         nbrMsg.classList.remove('hidden');
-        nbrMsg.textContent = '';
+        nbrMsg.textContent = parseInt(nbrMsg.textContent) + 1;
     }
 }
 
 function onLogout() {
-    stompClient.send("/app/user.disconnectUser",
-        {},
-        JSON.stringify({ nickName: nickname, password: password, status: 'OFFLINE' })
-    );
-    window.location.reload();
-}
-registrationForm.addEventListener('submit', register, true);
-loginForm.addEventListener('submit', connect, true); // step 1
-messageForm.addEventListener('submit', sendMessage, true);
-window.onbeforeunload = () => onLogout();
-//dodany kod do obsługi zdarzenia logout,
-//aby zachować funkcjonalność wylogowania użytkownika i rozłączenia z serwerem WebSocket.
-//logout.addEventListener('click', onLogout, true);
-logout.addEventListener('click', () => {
     if (stompClient) {
         stompClient.send("/app/user.disconnectUser",
             {},
@@ -298,4 +247,10 @@ logout.addEventListener('click', () => {
     }
     loginPage.classList.remove('hidden');
     chatPage.classList.add('hidden');
-});
+}
+
+registrationForm.addEventListener('submit', register, true);
+loginForm.addEventListener('submit', connect, true);
+messageForm.addEventListener('submit', sendMessage, true);
+logout.addEventListener('click', onLogout, true);
+window.onbeforeunload = () => onLogout();

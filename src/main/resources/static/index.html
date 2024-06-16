@@ -21,19 +21,21 @@
         <input type="password" id="registration-password" name="password" placeholder="Enter your password" required>
 
         <button type="submit">Register</button>
+        <p>Already have an account? <a href="javascript:void(0)" onclick="showLoginPage()">Login</a></p> <!--dodane-->
     </form>
 </div>
 
-<div class="user-form" id="login-page">
+<div class="user-form hidden" id="login-page">
     <h2>Enter Chatroom</h2>
     <form id="loginForm">
         <label for="login-nickname">Nickname:</label>
         <input type="text" id="login-nickname" name="nickname" required>
 
-        <label for="login-password">Real Name:</label>
+        <label for="login-password">Password:</label>
         <input type="password" id="login-password" name="password" required>
 
         <button type="submit">Enter Chatroom</button>
+        <p>Don't have an account? <a href="javascript:void(0)" onclick="showRegistrationPage()">Register</a></p> <!--dodane-->
     </form>
 </div>
 
