@@ -23,19 +23,22 @@ public class UserController {
 
 
     @PostMapping("/app/registerUser")
-    @ResponseBody // Dodajemy, aby zwrócić odpowiedź jako ciało odpowiedzi HTTP
+    @ResponseBody
     public ResponseEntity<String> registerUser(@RequestBody User user) {
-        // Upewniamy się, że przekazane dane są prawidłowe
+
         if (user.getNickName() == null || user.getNickName().isEmpty() ||
                 user.getPassword() == null || user.getPassword().isEmpty()) {
             return ResponseEntity.badRequest().body("Nickname and password are required.");
         }
         Optional<User> userById = userService.findUserByNickNameAndPassword(user.getNickName(), user.getPassword());
 
-        // Zapisujemy użytkownika
+        if(userById.isPresent()){
+            return ResponseEntity.badRequest().body("User with the same nickname already exist in database");
+        }
+
         userService.saveUser(user);
 
-        // Zwracamy odpowiedź HTTP 200 OK z komunikatem
+
         return ResponseEntity.ok("User registered successfully");
     }
 
@@ -43,15 +46,17 @@ public class UserController {
     @PostMapping("/app/loginUser")
     @ResponseBody
     public ResponseEntity<String> loginUser(@RequestBody User user) {
-
         if (user.getNickName() == null || user.getNickName().isEmpty() ||
                 user.getPassword() == null || user.getPassword().isEmpty()) {
             return ResponseEntity.badRequest().body("Nickname and password are required.");
         }
 
-        Optional<User> existingUser = userService.findUserByNickNameAndPassword(user.getNickName(), user.getPassword());
+        Optional<User> existingUserOptional = userService.findUserByNickNameAndPassword(user.getNickName(), user.getPassword());
 
-        if (existingUser.isPresent()) {
+        if (existingUserOptional.isPresent()) {
+            User existingUser = existingUserOptional.get();
+            existingUser.setStatus(Status.ONLINE);
+            userService.saveUser(existingUser);
             return ResponseEntity.ok("User logged in successfully");
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid nickname or password.");
@@ -59,14 +64,15 @@ public class UserController {
     }
 
 
-    @MessageMapping("/user.addUser")
-    @SendTo("/user/public")
-    public User addUser(
-            @Payload User user
-    ) {
-        userService.saveUser(user);
-        return user;
-    }
+
+//    @MessageMapping("/user.addUser")
+//    @SendTo("/user/public")
+//    public User addUser(
+//            @Payload User user
+//    ) {
+//        userService.saveUser(user);
+//        return user;
+//    }
 
     @MessageMapping("/user.disconnectUser")
     @SendTo("/user/public")

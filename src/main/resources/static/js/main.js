@@ -68,20 +68,26 @@ function connect(event) {
     password = document.querySelector('#login-password').value.trim();
 
     if (nickname && password) {
-        fetch(`/app/loginUser`, {
+        const formData = {
+            nickName: nickname,
+            password: password
+        };
+
+        fetch('/app/loginUser', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ nickName: nickname, password: password })
+            body: JSON.stringify(formData)
         })
         .then(response => {
             if (!response.ok) {
                 throw new Error('Login failed.');
             }
-            return response.json();
+            return response.text();
         })
         .then(data => {
+            alert('Login successful.');
             loginPage.classList.add('hidden');
             chatPage.classList.remove('hidden');
 
@@ -95,6 +101,8 @@ function connect(event) {
         });
     }
 }
+
+
 
 function onConnected() {
     stompClient.subscribe(`/user/${nickname}/queue/messages`, onMessageReceived);
