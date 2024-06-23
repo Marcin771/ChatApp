@@ -9,17 +9,33 @@
 <body>
 
 <h2>One to One Chat | Spring boot & Websocket | By Alibou</h2>
+<!--dodana formatka registrationForm-->
+<div class="user-form" id="registration-page">
+    <h2>Registration</h2>
+    <form id="registrationForm" method="post" action="/app/registerUser">
+        <input type="hidden">
+        <label for="registration-nickname">Nickname:</label>
+        <input type="text" id="registration-nickname" name="nickName" placeholder="Enter your nickname" required>
 
-<div class="user-form" id="username-page">
+        <label for="registration-password">Password:</label>
+        <input type="password" id="registration-password" name="password" placeholder="Enter your password" required>
+
+        <button type="submit">Register</button>
+        <p>Already have an account? <a href="javascript:void(0)" onclick="showLoginPage()">Login</a></p> <!--dodane-->
+    </form>
+</div>
+
+<div class="user-form hidden" id="login-page" >
     <h2>Enter Chatroom</h2>
-    <form id="usernameForm">
-        <label for="nickname">Nickname:</label>
-        <input type="text" id="nickname" name="nickname" required>
+    <form id="loginForm" method="post" action="/app/loginUser">
+        <label for="login-nickname">Nickname:</label>
+        <input type="text" id="login-nickname" name="nickname" required>
 
-        <label for="fullname">Real Name:</label>
-        <input type="text" id="fullname" name="realname" required>
+        <label for="login-password">Password:</label>
+        <input type="password" id="login-password" name="password" required>
 
         <button type="submit">Enter Chatroom</button>
+        <p>Don't have an account? <a href="javascript:void(0)" onclick="showRegistrationPage()">Register</a></p> <!--dodane-->
     </form>
 </div>
 

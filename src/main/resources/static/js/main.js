@@ -1,8 +1,10 @@
 'use strict';
 
-const usernamePage = document.querySelector('#username-page');
+const registrationPage = document.querySelector('#registration-page');
+const loginPage = document.querySelector('#login-page');
 const chatPage = document.querySelector('#chat-page');
-const usernameForm = document.querySelector('#usernameForm');
+const registrationForm = document.querySelector('#registrationForm');
+const loginForm = document.querySelector('#loginForm');
 const messageForm = document.querySelector('#messageForm');
 const messageInput = document.querySelector('#message');
 const connectingElement = document.querySelector('.connecting');
@@ -11,24 +13,95 @@ const logout = document.querySelector('#logout');
 
 let stompClient = null;
 let nickname = null;
-let fullname = null;
+let password = null;
 let selectedUserId = null;
 
-function connect(event) {
-    nickname = document.querySelector('#nickname').value.trim();
-    fullname = document.querySelector('#fullname').value.trim();
+function showRegistrationPage() {
+    loginPage.classList.add('hidden');
+    registrationPage.classList.remove('hidden');
+}
 
-    if (nickname && fullname) {
-        usernamePage.classList.add('hidden');
-        chatPage.classList.remove('hidden');
+function showLoginPage() {
+    registrationPage.classList.add('hidden');
+    loginPage.classList.remove('hidden');
+}
 
-        const socket = new SockJS('/ws');
-        stompClient = Stomp.over(socket);
+function register(event) {
+    nickname = document.querySelector('#registration-nickname').value.trim();
+    password = document.querySelector('#registration-password').value.trim();
 
-        stompClient.connect({}, onConnected, onError);
+    if (nickname && password) {
+        const formData = {
+            nickName: nickname,
+            password: password
+        };
+
+        fetch('/app/registerUser', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Registration failed. User might already exist.');
+            }
+            return response.text();
+        })
+        .then(data => {
+            alert('Registration successful.');
+            showLoginPage();
+        })
+        .catch(error => {
+            alert(`Registration failed: ${error.message}`);
+            console.error('Registration error:', error);
+        });
     }
     event.preventDefault();
 }
+
+
+function connect(event) {
+    event.preventDefault();
+    nickname = document.querySelector('#login-nickname').value.trim();
+    password = document.querySelector('#login-password').value.trim();
+
+    if (nickname && password) {
+        const formData = {
+            nickName: nickname,
+            password: password
+        };
+
+        fetch('/app/loginUser', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Login failed.');
+            }
+            return response.text();
+        })
+        .then(data => {
+            alert('Login successful.');
+            loginPage.classList.add('hidden');
+            chatPage.classList.remove('hidden');
+
+            const socket = new SockJS('/ws');
+            stompClient = Stomp.over(socket);
+            stompClient.connect({}, onConnected, onError);
+        })
+        .catch(error => {
+            alert(`Login failed: ${error.message}`);
+            console.error('Login error:', error);
+        });
+    }
+}
+
 
 
 function onConnected() {
@@ -38,9 +111,9 @@ function onConnected() {
     // register the connected user
     stompClient.send("/app/user.addUser",
         {},
-        JSON.stringify({nickName: nickname, fullName: fullname, status: 'ONLINE'})
+        JSON.stringify({ nickName: nickname, password: password, status: 'ONLINE' })
     );
-    document.querySelector('#connected-user-fullname').textContent = fullname;
+    document.querySelector('#connected-user-fullname').textContent = nickname;
     findAndDisplayConnectedUsers().then();
 }
 
@@ -68,10 +141,10 @@ function appendUserElement(user, connectedUsersList) {
 
     const userImage = document.createElement('img');
     userImage.src = '../img/user_icon.png';
-    userImage.alt = user.fullName;
+    userImage.alt = user.nickName;
 
     const usernameSpan = document.createElement('span');
-    usernameSpan.textContent = user.fullName;
+    usernameSpan.textContent = user.nickName;
 
     const receivedMsgs = document.createElement('span');
     receivedMsgs.textContent = '0';
@@ -101,7 +174,6 @@ function userItemClick(event) {
     const nbrMsg = clickedUser.querySelector('.nbr-msg');
     nbrMsg.classList.add('hidden');
     nbrMsg.textContent = '0';
-
 }
 
 function displayMessage(senderId, content) {
@@ -128,30 +200,27 @@ async function fetchAndDisplayUserChat() {
     chatArea.scrollTop = chatArea.scrollHeight;
 }
 
-
 function onError() {
     connectingElement.textContent = 'Could not connect to WebSocket server. Please refresh this page to try again!';
     connectingElement.style.color = 'red';
 }
 
-
 function sendMessage(event) {
+    event.preventDefault();
     const messageContent = messageInput.value.trim();
     if (messageContent && stompClient) {
         const chatMessage = {
             senderId: nickname,
             recipientId: selectedUserId,
-            content: messageInput.value.trim(),
+            content: messageContent,
             timestamp: new Date()
         };
         stompClient.send("/app/chat", {}, JSON.stringify(chatMessage));
-        displayMessage(nickname, messageInput.value.trim());
+        displayMessage(nickname, messageContent);
         messageInput.value = '';
     }
     chatArea.scrollTop = chatArea.scrollHeight;
-    event.preventDefault();
 }
-
 
 async function onMessageReceived(payload) {
     await findAndDisplayConnectedUsers();
@@ -172,19 +241,24 @@ async function onMessageReceived(payload) {
     if (notifiedUser && !notifiedUser.classList.contains('active')) {
         const nbrMsg = notifiedUser.querySelector('.nbr-msg');
         nbrMsg.classList.remove('hidden');
-        nbrMsg.textContent = '';
+        nbrMsg.textContent = parseInt(nbrMsg.textContent) + 1;
     }
 }
 
 function onLogout() {
-    stompClient.send("/app/user.disconnectUser",
-        {},
-        JSON.stringify({nickName: nickname, fullName: fullname, status: 'OFFLINE'})
-    );
-    window.location.reload();
+    if (stompClient) {
+        stompClient.send("/app/user.disconnectUser",
+            {},
+            JSON.stringify({ nickName: nickname, password: password, status: 'OFFLINE' })
+        );
+        stompClient.disconnect();
+    }
+    loginPage.classList.remove('hidden');
+    chatPage.classList.add('hidden');
 }
 
-usernameForm.addEventListener('submit', connect, true); // step 1
+registrationForm.addEventListener('submit', register, true);
+loginForm.addEventListener('submit', connect, true);
 messageForm.addEventListener('submit', sendMessage, true);
 logout.addEventListener('click', onLogout, true);
 window.onbeforeunload = () => onLogout();
