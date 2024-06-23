@@ -20,6 +20,7 @@ public class UserService {
     private final MongoTemplate mongoTemplate;
 
     public void saveUser(User user) {
+//  Po dodaniu funkcjonalności Rejestracji zmiana statusu jest w innym miejscu
 //        user.setStatus(Status.ONLINE);
         repository.save(user);
     }
@@ -48,6 +49,5 @@ public class UserService {
         Query query = new Query(Criteria.where("nickName").is(user.getNickName()).and("password").is(user.getPassword()));
         Update update = new Update().set("status", status);
         mongoTemplate.updateFirst(query,update,User.class);
-//        repository.updateUserStatus(user.getNickName(), user.getPassword(), status);
     }
 }

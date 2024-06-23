@@ -25,7 +25,6 @@ public class UserController {
     @PostMapping("/app/registerUser")
     @ResponseBody
     public ResponseEntity<String> registerUser(@RequestBody User user) {
-
         if (user.getNickName() == null || user.getNickName().isEmpty() ||
                 user.getPassword() == null || user.getPassword().isEmpty()) {
             return ResponseEntity.badRequest().body("Nickname and password are required.");
@@ -35,10 +34,7 @@ public class UserController {
         if(userById.isPresent()){
             return ResponseEntity.badRequest().body("User with the same nickname already exist in database");
         }
-
         userService.saveUser(user);
-
-
         return ResponseEntity.ok("User registered successfully");
     }
 
@@ -63,8 +59,7 @@ public class UserController {
         }
     }
 
-
-
+//  Po dodaniu funkcjonalności Rejestracji metoda niepotrzebna
 //    @MessageMapping("/user.addUser")
 //    @SendTo("/user/public")
 //    public User addUser(
